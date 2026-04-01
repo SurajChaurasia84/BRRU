@@ -11,7 +11,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Visabrru',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -31,21 +32,20 @@ class MyApp extends StatelessWidget {
         colorScheme:
             ColorScheme.fromSeed(
               seedColor: const Color(0xFF0A1F33),
-              brightness: Brightness.dark,
+              brightness: Brightness.light,
             ).copyWith(
-              primary: const Color(0xFF0F2A44),
+              primary: const Color(0xFF0A1F33),
               secondary: const Color(0xFF123A5A),
-              background: const Color(0xFF0A1F33),
-              surface: const Color(0xFF0F2A44),
-              inversePrimary: const Color(0xFF123A5A),
+              surface: const Color(0xFFF7F9FB),
+              inversePrimary: const Color(0xFF0A1F33),
             ),
-        scaffoldBackgroundColor: const Color(0xFF0A1F33),
+        scaffoldBackgroundColor: const Color(0xFFF7F9FB),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F2A44),
+          backgroundColor: Color(0xFF0A1F33),
           foregroundColor: Colors.white,
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF123A5A),
+          backgroundColor: Color(0xFF0A1F33),
           foregroundColor: Colors.white,
         ),
       ),
@@ -86,6 +86,16 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _showDrawerMessage(String label) {
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(label),
+        duration: const Duration(milliseconds: 900),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -95,6 +105,130 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF0A1F33),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 50,
+                ),
+                child: Text(
+                  'Menu',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(color: Colors.white),
+                ),
+              ),
+              const Divider(color: Colors.white54, thickness: 1),
+              ListTile(
+                leading: const Icon(Icons.home, color: Colors.white),
+                title: const Text(
+                  'Home',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => _showDrawerMessage('Home selected'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip, color: Colors.white),
+                title: const Text(
+                  'Privacy Policy',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => _showDrawerMessage('Privacy Policy selected'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.star_rate, color: Colors.white),
+                title: const Text(
+                  'Rate Us',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => _showDrawerMessage('Rate Us selected'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Colors.white),
+                title: const Text(
+                  'Share App',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => _showDrawerMessage('Share App selected'),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Connect with us',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.facebook, color: Colors.white),
+                      title: const Text(
+                        'Facebook',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      onTap: () => _showDrawerMessage('Facebook selected'),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.ondemand_video,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'YouTube',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      onTap: () => _showDrawerMessage('YouTube selected'),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.message, color: Colors.white),
+                      title: const Text(
+                        'WhatsApp',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      onTap: () => _showDrawerMessage('WhatsApp selected'),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.email, color: Colors.white),
+                      title: const Text(
+                        'Email',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      onTap: () => _showDrawerMessage('Email selected'),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Version 1.0.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
