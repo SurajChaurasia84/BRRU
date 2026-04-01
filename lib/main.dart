@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -96,6 +98,39 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Future<void> _openEmailClient() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'rupeshraybhar516@gmail.com',
+    );
+
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {
+      // ignore and try web fallback
+    }
+
+    final Uri webEmailUri = Uri(
+      scheme: 'https',
+      host: 'mail.google.com',
+      path: '/mail/',
+      queryParameters: {
+        'view': 'cm',
+        'fs': '1',
+        'to': 'rupeshraybhar516@gmail.com',
+      },
+    );
+
+    if (await canLaunchUrl(webEmailUri)) {
+      await launchUrl(webEmailUri, mode: LaunchMode.externalApplication);
+    } else {
+      _showDrawerMessage('Could not open email app');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -185,9 +220,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(
-                        Icons.ondemand_video,
-                        color: Colors.white,
+                      leading: SvgPicture.asset(
+                        'assets/youtube.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
                       ),
                       title: const Text(
                         'YouTube',
@@ -197,7 +237,15 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.message, color: Colors.white),
+                      leading: SvgPicture.asset(
+                        'assets/whatsapp.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
                       title: const Text(
                         'WhatsApp',
                         style: TextStyle(color: Colors.white70),
@@ -211,7 +259,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         'Email',
                         style: TextStyle(color: Colors.white70),
                       ),
-                      onTap: () => _showDrawerMessage('Email selected'),
+                      onTap: () => _openEmailClient(),
                     ),
                   ],
                 ),
