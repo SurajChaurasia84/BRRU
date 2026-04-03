@@ -86,15 +86,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const String _playStoreLink =
+  static const String _defaultPlayStoreLink =
       'https://play.google.com/store/apps/details?id=com.visabrru.poems';
-  static const String _facebookLink =
+  static const String _defaultFacebookLink =
       'https://www.facebook.com/profile.php?id=61584908841134';
-  static const String _whatsAppLink =
+  static const String _defaultWhatsAppLink =
       'https://whatsapp.com/channel/0029VbBh69LKQuJIZWv5xV0o';
-  static const String _youtubeChannelLink =
+  static const String _defaultYoutubeChannelLink =
       'https://youtube.com/@boysenberrysm?si=296VxdjDoCqIu3j7';
-  static const String _emailAddress = 'rupeshraybhar516@gmail.com';
+  static const String _defaultEmailAddress = 'rupeshraybhar516@gmail.com';
+  static const String _defaultPrivacyPolicyLink = 'https://visabrru.com/privacy-policy';
+  static const String _settingsCollection = 'app_settings';
+  static const String _linksDocument = 'drawer_links';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _sharePending = false;
@@ -112,12 +115,19 @@ class _MyHomePageState extends State<MyHomePage> {
         .snapshots();
   }
 
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _linkSettingsStream() {
+    return FirebaseFirestore.instance
+        .collection(_settingsCollection)
+        .doc(_linksDocument)
+        .snapshots();
+  }
+
   void _closeDrawer() {
     Navigator.of(context).pop();
   }
 
-  Future<void> _openEmailClient() async {
-    final emailUri = Uri(scheme: 'mailto', path: _emailAddress);
+  Future<void> _openEmailClient(String emailAddress) async {
+    final emailUri = Uri(scheme: 'mailto', path: emailAddress);
 
     try {
       if (await launchUrl(emailUri, mode: LaunchMode.externalApplication)) {
@@ -139,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       scheme: 'https',
       host: 'mail.google.com',
       path: '/mail/',
-      queryParameters: {'view': 'cm', 'fs': '1', 'to': _emailAddress},
+      queryParameters: {'view': 'cm', 'fs': '1', 'to': emailAddress},
     );
 
     try {
@@ -158,12 +168,12 @@ class _MyHomePageState extends State<MyHomePage> {
     Fluttertoast.showToast(msg: 'Not available');
   }
 
-  Future<void> _shareApp() async {
-    await Share.share('Check out Visabrru on the Play Store: $_playStoreLink');
+  Future<void> _shareApp(String playStoreLink) async {
+    await Share.share('Check out Visabrru on the Play Store: $playStoreLink');
   }
 
-  Future<void> _rateApp() async {
-    await _openExternalLink(_playStoreLink);
+  Future<void> _rateApp(String playStoreLink) async {
+    await _openExternalLink(playStoreLink);
   }
 
   Future<void> _openExternalLink(String url) async {
@@ -199,15 +209,41 @@ class _MyHomePageState extends State<MyHomePage> {
         if (!isOpened && _sharePending) {
           _sharePending = false;
           await Future<void>.delayed(const Duration(milliseconds: 150));
-          await _shareApp();
+          final doc = await FirebaseFirestore.instance
+              .collection(_settingsCollection)
+              .doc(_linksDocument)
+              .get();
+          final settings = DrawerLinkSettings.fromSnapshot(
+            doc,
+            playStoreFallback: _defaultPlayStoreLink,
+            facebookFallback: _defaultFacebookLink,
+            whatsAppFallback: _defaultWhatsAppLink,
+            youtubeFallback: _defaultYoutubeChannelLink,
+            emailFallback: _defaultEmailAddress,
+            privacyFallback: _defaultPrivacyPolicyLink,
+          );
+          await _shareApp(settings.playStoreLink);
         }
       },
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF0A1F33),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      drawer: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: _linkSettingsStream(),
+        builder: (context, snapshot) {
+          final settings = DrawerLinkSettings.fromSnapshot(
+            snapshot.data,
+            playStoreFallback: _defaultPlayStoreLink,
+            facebookFallback: _defaultFacebookLink,
+            whatsAppFallback: _defaultWhatsAppLink,
+            youtubeFallback: _defaultYoutubeChannelLink,
+            emailFallback: _defaultEmailAddress,
+            privacyFallback: _defaultPrivacyPolicyLink,
+          );
+
+          return Drawer(
+            backgroundColor: const Color(0xFF0A1F33),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -220,7 +256,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            'Visabrru Poetry',
+                            'Visabrru',
                             style: Theme.of(
                               context,
                             ).textTheme.headlineSmall?.copyWith(
@@ -263,13 +299,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   'Privacy Policy',
                   style: TextStyle(color: Colors.white),
                 ),
-                onTap: () {
+                onTap: () async {
                   _closeDrawer();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyScreen(),
-                    ),
-                  );
+                  await Future<void>.delayed(const Duration(milliseconds: 150));
+                  await _openExternalLink(settings.privacyPolicyLink);
                 },
               ),
               ListTile(
@@ -281,7 +314,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onTap: () async {
                   _closeDrawer();
                   await Future<void>.delayed(const Duration(milliseconds: 150));
-                  await _rateApp();
+                  await _rateApp(settings.playStoreLink);
                 },
               ),
               ListTile(
@@ -325,7 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         await Future<void>.delayed(
                           const Duration(milliseconds: 150),
                         );
-                        await _openExternalLink(_facebookLink);
+                        await _openExternalLink(settings.facebookLink);
                       },
                     ),
                     ListTile(
@@ -348,7 +381,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         await Future<void>.delayed(
                           const Duration(milliseconds: 150),
                         );
-                        await _openExternalLink(_youtubeChannelLink);
+                        await _openExternalLink(settings.youtubeLink);
                       },
                     ),
                     ListTile(
@@ -371,7 +404,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         await Future<void>.delayed(
                           const Duration(milliseconds: 150),
                         );
-                        await _openExternalLink(_whatsAppLink);
+                        await _openExternalLink(settings.whatsAppLink);
                       },
                     ),
                     ListTile(
@@ -386,7 +419,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         await Future<void>.delayed(
                           const Duration(milliseconds: 150),
                         );
-                        await _openEmailClient();
+                        await _openEmailClient(settings.emailAddress);
                       },
                     ),
                   ],
@@ -401,9 +434,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ),
-            ],
-          ),
-        ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -429,7 +464,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Search poems, author, language',
+                hintText: 'Search country, visa type etc.',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isEmpty
                     ? null
@@ -839,6 +874,52 @@ class Poem {
   }
 }
 
+class DrawerLinkSettings {
+  const DrawerLinkSettings({
+    required this.playStoreLink,
+    required this.facebookLink,
+    required this.whatsAppLink,
+    required this.youtubeLink,
+    required this.emailAddress,
+    required this.privacyPolicyLink,
+  });
+
+  final String playStoreLink;
+  final String facebookLink;
+  final String whatsAppLink;
+  final String youtubeLink;
+  final String emailAddress;
+  final String privacyPolicyLink;
+
+  factory DrawerLinkSettings.fromSnapshot(
+    DocumentSnapshot<Map<String, dynamic>>? snapshot, {
+    required String playStoreFallback,
+    required String facebookFallback,
+    required String whatsAppFallback,
+    required String youtubeFallback,
+    required String emailFallback,
+    required String privacyFallback,
+  }) {
+    final data = snapshot?.data() ?? <String, dynamic>{};
+    return DrawerLinkSettings(
+      playStoreLink: _valueOrFallback(data['playStoreLink'], playStoreFallback),
+      facebookLink: _valueOrFallback(data['facebookLink'], facebookFallback),
+      whatsAppLink: _valueOrFallback(data['whatsAppLink'], whatsAppFallback),
+      youtubeLink: _valueOrFallback(data['youtubeLink'], youtubeFallback),
+      emailAddress: _valueOrFallback(data['emailAddress'], emailFallback),
+      privacyPolicyLink: _valueOrFallback(
+        data['privacyPolicyLink'],
+        privacyFallback,
+      ),
+    );
+  }
+
+  static String _valueOrFallback(Object? value, String fallback) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? fallback : text;
+  }
+}
+
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key, required this.message});
 
@@ -934,136 +1015,6 @@ class ErrorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Visabrru')),
       body: ErrorBody(message: message),
-    );
-  }
-}
-
-class PrivacyPolicyScreen extends StatelessWidget {
-  const PrivacyPolicyScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Privacy Policy')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text(
-            'Visabrru Privacy Policy',
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Effective date: April 2, 2026',
-            style: textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Overview',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Visabrru is a poetry application that allows users to browse poems and open related external links such as YouTube, Facebook, WhatsApp, email, and the Google Play Store. This Privacy Policy explains what information may be processed when you use the app and how that information is handled.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Information We Collect',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Visabrru does not require users to create an account in the user app. The app displays poem data that is stored in Firebase Firestore, including fields such as title, language, author name, poem text, and optional YouTube links. The app may also process limited technical information necessary for app functionality, such as network requests, crash-related system behavior, and device-level app routing when opening external links.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'How We Use Information',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We use the information available in the app to display poems, organize content by language and author, support search, and open related external links selected by the user. Firebase services are used to store and deliver poem content for app functionality.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'External Services and Links',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'The app may open third-party services such as YouTube, Facebook, WhatsApp, Gmail, browsers, and the Google Play Store. When you open a third-party service, that service may collect information according to its own privacy policy. Visabrru does not control third-party data practices outside the app.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Data Sharing and Sale',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We do not sell personal information through the Visabrru user app. We may rely on service providers such as Firebase to support core app functionality. Those providers may process technical data as necessary to operate their services.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Data Retention',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Poem content remains available in our backend until it is updated or removed by the app administrator. Any information you send to us directly by email may be retained for support, communication, or record-keeping purposes as reasonably necessary.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Children\'s Privacy',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Visabrru is not intended to knowingly collect personal information from children through the user app. If you believe information relating to a child has been provided to us inappropriately, please contact us so we can review and take suitable action.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Your Choices',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'You may choose whether to open external links from within the app. You may also contact us if you want to request correction or removal of specific poem-related information that you believe is inaccurate or inappropriate.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Policy Updates',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We may update this Privacy Policy from time to time to reflect changes in the app, legal requirements, or operational needs. Updated versions will be reflected inside the app with a revised effective date where applicable.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Contact Us',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'If you have any privacy-related questions or requests, please contact us at rupeshraybhar516@gmail.com.',
-            style: textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
     );
   }
 }
