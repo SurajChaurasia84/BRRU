@@ -641,7 +641,9 @@ class PoemTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => PoemDetailScreen(poem: poem)),
+            MaterialPageRoute(
+              builder: (_) => PoemDetailLoaderScreen(poem: poem),
+            ),
           );
         },
         child: Ink(
@@ -895,6 +897,80 @@ class PoemDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PoemDetailLoaderScreen extends StatefulWidget {
+  final Poem poem;
+  const PoemDetailLoaderScreen({super.key, required this.poem});
+
+  @override
+  State<PoemDetailLoaderScreen> createState() => _PoemDetailLoaderScreenState();
+}
+
+class _PoemDetailLoaderScreenState extends State<PoemDetailLoaderScreen> {
+  bool _navigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _showInterstitial();
+  }
+
+  void _showInterstitial() {
+    const placementId = 'Interstitial_Android';
+
+    // Preload the ad first
+    UnityAds.load(
+      placementId: placementId,
+      onComplete: (placementId) {
+        if (kDebugMode) print('Interstitial loaded, now showing...');
+        UnityAds.showVideoAd(
+          placementId: placementId,
+          onStart: (placementId) {
+            if (kDebugMode) print('Interstitial started');
+          },
+          onComplete: (placementId) {
+            if (!_navigated) _openPoemScreen();
+          },
+          onFailed: (placementId, error, message) {
+            if (!_navigated) _openPoemScreen();
+          },
+        );
+      },
+      onFailed: (placementId, error, message) {
+        if (kDebugMode) print('Interstitial failed to load: $error $message');
+        if (!_navigated) _openPoemScreen();
+      },
+    );
+
+    // absolute fail-safe: in case ad never loads
+    Future.delayed(const Duration(seconds: 6), () {
+      if (!_navigated) _openPoemScreen();
+    });
+  }
+
+  void _openPoemScreen() {
+    _navigated = true;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => PoemDetailScreen(poem: widget.poem)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading poem...'),
           ],
         ),
       ),
