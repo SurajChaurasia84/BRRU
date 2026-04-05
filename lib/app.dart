@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
 import 'firebase_options.dart';
 
@@ -18,15 +19,16 @@ class PoemsApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Visabrru',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0A1F33),
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: const Color(0xFF0A1F33),
-          secondary: const Color(0xFF123A5A),
-          surface: const Color(0xFFF7F9FB),
-          inversePrimary: const Color(0xFF0A1F33),
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0A1F33),
+              brightness: Brightness.light,
+            ).copyWith(
+              primary: const Color(0xFF0A1F33),
+              secondary: const Color(0xFF123A5A),
+              surface: const Color(0xFFF7F9FB),
+              inversePrimary: const Color(0xFF0A1F33),
+            ),
         scaffoldBackgroundColor: const Color(0xFFF7F9FB),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF0A1F33),
@@ -67,7 +69,9 @@ class AppBootstrap extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          return ErrorScreen(message: 'Firebase init failed: ${snapshot.error}');
+          return ErrorScreen(
+            message: 'Firebase init failed: ${snapshot.error}',
+          );
         }
 
         return const MyHomePage(title: 'Visabrru');
@@ -95,7 +99,8 @@ class _MyHomePageState extends State<MyHomePage> {
   static const String _defaultYoutubeChannelLink =
       'https://youtube.com/@boysenberrysm?si=296VxdjDoCqIu3j7';
   static const String _defaultEmailAddress = 'rupeshraybhar516@gmail.com';
-  static const String _defaultPrivacyPolicyLink = 'https://visabrru.com/privacy-policy';
+  static const String _defaultPrivacyPolicyLink =
+      'https://visabrru.com/privacy-policy';
   static const String _settingsCollection = 'app_settings';
   static const String _linksDocument = 'drawer_links';
   final TextEditingController _searchController = TextEditingController();
@@ -153,11 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     try {
-      if (
-          await launchUrl(
-            webEmailUri,
-            mode: LaunchMode.externalApplication,
-          ) ||
+      if (await launchUrl(webEmailUri, mode: LaunchMode.externalApplication) ||
           await launchUrl(webEmailUri, mode: LaunchMode.platformDefault)) {
         return;
       }
@@ -244,196 +245,204 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _poemsStream(),
-                  builder: (context, snapshot) {
-                    final poemCount = snapshot.data?.docs.length ?? 0;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 40,
+                    ),
+                    child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _poemsStream(),
+                      builder: (context, snapshot) {
+                        final poemCount = snapshot.data?.docs.length ?? 0;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Visabrru',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Available $poemCount poems',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.white70),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(color: Colors.white54, thickness: 1),
+                  ListTile(
+                    tileColor: const Color(0xFF123A5A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    leading: const Icon(Icons.home, color: Colors.white),
+                    title: const Text(
+                      'Home',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onTap: _closeDrawer,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip, color: Colors.white),
+                    title: const Text(
+                      'Privacy Policy',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () async {
+                      _closeDrawer();
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 150),
+                      );
+                      await _openExternalLink(settings.privacyPolicyLink);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.star_rate, color: Colors.white),
+                    title: const Text(
+                      'Rate Us',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () async {
+                      _closeDrawer();
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 150),
+                      );
+                      await _rateApp(settings.playStoreLink);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.share, color: Colors.white),
+                    title: const Text(
+                      'Share App',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      _sharePending = true;
+                      _closeDrawer();
+                    },
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Connect with us',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            'Visabrru',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(
+                            Icons.facebook,
+                            color: Colors.white,
+                          ),
+                          title: const Text(
+                            'Facebook',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () async {
+                            _closeDrawer();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 150),
+                            );
+                            await _openExternalLink(settings.facebookLink);
+                          },
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: SvgPicture.asset(
+                            'assets/youtube.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Available $poemCount poems',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
+                          title: const Text(
+                            'YouTube',
+                            style: TextStyle(color: Colors.white70),
                           ),
+                          onTap: () async {
+                            _closeDrawer();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 150),
+                            );
+                            await _openExternalLink(settings.youtubeLink);
+                          },
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: SvgPicture.asset(
+                            'assets/whatsapp.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          title: const Text(
+                            'WhatsApp Channel',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () async {
+                            _closeDrawer();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 150),
+                            );
+                            await _openExternalLink(settings.whatsAppLink);
+                          },
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.email, color: Colors.white),
+                          title: const Text(
+                            'Email',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () async {
+                            _closeDrawer();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 150),
+                            );
+                            await _openEmailClient(settings.emailAddress);
+                          },
                         ),
                       ],
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: Colors.white54, thickness: 1),
-              ListTile(
-                tileColor: const Color(0xFF123A5A),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                leading: const Icon(Icons.home, color: Colors.white),
-                title: const Text(
-                  'Home',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                onTap: _closeDrawer,
-              ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip, color: Colors.white),
-                title: const Text(
-                  'Privacy Policy',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  _closeDrawer();
-                  await Future<void>.delayed(const Duration(milliseconds: 150));
-                  await _openExternalLink(settings.privacyPolicyLink);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.star_rate, color: Colors.white),
-                title: const Text(
-                  'Rate Us',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  _closeDrawer();
-                  await Future<void>.delayed(const Duration(milliseconds: 150));
-                  await _rateApp(settings.playStoreLink);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share, color: Colors.white),
-                title: const Text(
-                  'Share App',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  _sharePending = true;
-                  _closeDrawer();
-                },
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Connect with us',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.facebook, color: Colors.white),
-                      title: const Text(
-                        'Facebook',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      onTap: () async {
-                        _closeDrawer();
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 150),
-                        );
-                        await _openExternalLink(settings.facebookLink);
-                      },
+                  const Spacer(),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Version 1.0.0',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white60, fontSize: 12),
                     ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: SvgPicture.asset(
-                        'assets/youtube.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      title: const Text(
-                        'YouTube',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      onTap: () async {
-                        _closeDrawer();
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 150),
-                        );
-                        await _openExternalLink(settings.youtubeLink);
-                      },
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: SvgPicture.asset(
-                        'assets/whatsapp.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      title: const Text(
-                        'WhatsApp Channel',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      onTap: () async {
-                        _closeDrawer();
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 150),
-                        );
-                        await _openExternalLink(settings.whatsAppLink);
-                      },
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.email, color: Colors.white),
-                      title: const Text(
-                        'Email',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      onTap: () async {
-                        _closeDrawer();
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 150),
-                        );
-                        await _openEmailClient(settings.emailAddress);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Version 1.0.0',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-              ),
+                  ),
                 ],
               ),
             ),
@@ -514,7 +523,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
 
                 if (poems.isEmpty) {
-                  return const EmptyBody(message: 'No poems match your search.');
+                  return const EmptyBody(
+                    message: 'No poems match your search.',
+                  );
                 }
 
                 return ListView.separated(
@@ -525,6 +536,35 @@ class _MyHomePageState extends State<MyHomePage> {
                     return PoemTile(poem: poems[index]);
                   },
                 );
+              },
+            ),
+          ),
+          SafeArea(
+            child: UnityBannerAd(
+              placementId: 'Banner_Android',
+
+              onLoad: (placementId) {
+                if (kDebugMode) {
+                  print('Banner loaded: $placementId');
+                }
+              },
+
+              onClick: (placementId) {
+                if (kDebugMode) {
+                  print('Banner clicked: $placementId');
+                }
+              },
+
+              onShown: (placementId) {
+                if (kDebugMode) {
+                  print('Banner shown: $placementId');
+                }
+              },
+
+              onFailed: (placementId, error, message) {
+                if (kDebugMode) {
+                  print('Banner failed: $error $message');
+                }
               },
             ),
           ),
@@ -644,21 +684,19 @@ class PoemTile extends StatelessWidget {
                           poem.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Author: ${poem.author?.isNotEmpty == true ? poem.author! : 'Not available'}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF405465),
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: const Color(0xFF405465),
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
@@ -804,7 +842,37 @@ class PoemDetailScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            Center(
+              child: UnityBannerAd(
+                placementId: 'Banner_Android',
+
+                onLoad: (placementId) {
+                  if (kDebugMode) {
+                    print('Banner loaded: $placementId');
+                  }
+                },
+
+                onClick: (placementId) {
+                  if (kDebugMode) {
+                    print('Banner clicked: $placementId');
+                  }
+                },
+
+                onShown: (placementId) {
+                  if (kDebugMode) {
+                    print('Banner shown: $placementId');
+                  }
+                },
+
+                onFailed: (placementId, error, message) {
+                  if (kDebugMode) {
+                    print('Banner failed: $error $message');
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),

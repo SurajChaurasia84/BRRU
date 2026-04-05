@@ -40,6 +40,7 @@ dependencies:
   url_launcher: ^6.3.1
   fluttertoast: ^8.2.6
   share_plus: ^10.0.2
+  unity_ads_plugin: ^0.3.30
 
 dev_dependencies:
   flutter_test:
