@@ -9,7 +9,7 @@ Future<void> main() async {
 
   await UnityAds.init(
     gameId: '6080439', 
-    testMode: true, // false for production
+    testMode: false, // false for production
     onComplete: () {
     if (kDebugMode) {
       print('Unity Ads Initialized');
