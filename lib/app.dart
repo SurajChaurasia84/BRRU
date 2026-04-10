@@ -65,7 +65,7 @@ class AppBootstrap extends StatelessWidget {
       future: _initializeFirebase(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingScreen(message: 'Loading poems...');
+          return const LoadingScreen(message: 'Loading...');
         }
 
         if (snapshot.hasError) {
@@ -270,7 +270,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Available $poemCount poems',
+                              'Available: $poemCount ',
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: Colors.white70),
                             ),
@@ -307,6 +307,21 @@ class _MyHomePageState extends State<MyHomePage> {
                         const Duration(milliseconds: 150),
                       );
                       await _openExternalLink(settings.privacyPolicyLink);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.link, color: Colors.white),
+                    title: const Text(
+                      'Official Sources',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      _closeDrawer();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const OfficialSourcesScreen(),
+                        ),
+                      );
                     },
                   ),
                   ListTile(
@@ -501,12 +516,12 @@ class _MyHomePageState extends State<MyHomePage> {
               stream: _poemsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingBody(message: 'Fetching poems...');
+                  return const LoadingBody(message: 'Fetching...');
                 }
 
                 if (snapshot.hasError) {
                   return const ErrorBody(
-                    message: 'Unable to load poems right now.',
+                    message: 'Unable to load content right now.',
                   );
                 }
 
@@ -518,13 +533,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 if (docs.isEmpty) {
                   return const EmptyBody(
-                    message: 'No poems available yet. Please check back later.',
+                    message: 'No content available yet. Please check back later.',
                   );
                 }
 
                 if (poems.isEmpty) {
                   return const EmptyBody(
-                    message: 'No poems match your search.',
+                    message: 'No matches found for your search.',
                   );
                 }
 
@@ -1088,7 +1103,7 @@ class UnsupportedPlatformScreen extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'Firebase is configured for Android in this project. Run this app on Android to use poems.',
+            'Firebase is configured for Android in this project. Run this app on Android to use it.',
             textAlign: TextAlign.center,
           ),
         ),
@@ -1159,6 +1174,78 @@ class ErrorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Visabrru')),
       body: ErrorBody(message: message),
+    );
+  }
+}
+
+class OfficialSourcesScreen extends StatelessWidget {
+  const OfficialSourcesScreen({super.key});
+
+  Future<void> _open(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      Fluttertoast.showToast(msg: 'Not available');
+      return;
+    }
+
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.platformDefault)) {
+        return;
+      }
+    } catch (_) {}
+
+    Fluttertoast.showToast(msg: 'Not available');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const sources = <Map<String, String>>[
+      {'title': 'US Department of State', 'url': 'https://travel.state.gov/'},
+      {'title': 'USCIS', 'url': 'https://www.uscis.gov/'},
+      {'title': 'US Customs and Border Protection', 'url': 'https://www.cbp.gov/'},
+      {'title': 'National Portal of India', 'url': 'https://www.india.gov.in/'},
+      {'title': 'Ministry of External Affairs, India', 'url': 'https://www.mea.gov.in/'},
+    ];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Official Sources')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const 
+          Text(
+            'Visabrru is not affiliated with any government authority, embassy, consulate, or immigration department. Always verify visa, immigration, travel, and government-related information from official sources before acting on it.',
+            style: TextStyle(fontSize: 13, height: 1.6),
+          ),
+          SizedBox(height: 13),
+          Text(
+            'Any visa, immigration, travel, or government-related information should always be verified from official government, embassy, or consulate sources before you rely on it.',
+            style: TextStyle(fontSize: 13, height: 1.6),
+          ),
+          SizedBox(height: 13),
+          Text(
+            'External links provided in the app are for convenience only. Users are responsible for checking the accuracy, eligibility rules, and latest updates from the original official source.',
+            style: TextStyle(fontSize: 13, height: 1.6),
+          ),
+          const SizedBox(height: 20),
+          ...sources.map(
+            (source) => Card(
+              child: ListTile(
+                title: Text(source['title']!),
+                subtitle: Text(source['url']!),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _open(context, source['url']!),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
